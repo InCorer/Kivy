@@ -1,3 +1,4 @@
+
 from kivy.clock import Clock
 from kivy.app import App
 from kivy.uix.button import Button
@@ -5,8 +6,7 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.label import Label
 from kivy.uix.screenmanager import *
 from kivy.uix.textinput import TextInput
-from win32.lib.win32con import FALSE
-
+from ruffier import *
 from instructions import *
 from kivy.properties import BooleanProperty
 
@@ -19,6 +19,7 @@ class MyApp(App):
         screen_man.add_widget(SecondScreen(name='2'))
         screen_man.add_widget(ThirdScreen(name='3'))
         screen_man.add_widget(FourthScreen(name='4'))
+        screen_man.add_widget(FifthScreen(name='5'))
         return screen_man
 
 class FirstScreen(Screen):
@@ -50,7 +51,7 @@ class FirstScreen(Screen):
         global age
         try:
             age = int(self.line_age.text)
-            self.manager.current='2'
+            self.manager.current='4'
             self.manager.transition.direction='down'
         except ValueError:
             pass
@@ -65,7 +66,7 @@ class SecondScreen(Screen):
         pulse_label = Label(text='Введите результат:')
         self.pulse_line = TextInput(height='30px', size_hint=(1, None), pos_hint={'center_y': 0.5}, multiline=False)
         self.pulse_line.set_disabled(True)
-        self.timer = Timer(1)
+        self.timer = Timer(15)
         self.timer.bind(done=self.unblock)
         layout.add_widget(text)
         layout.add_widget(self.timer)
@@ -96,7 +97,7 @@ class ThirdScreen(Screen):
         layout = BoxLayout(orientation='vertical')
         text = Label(text=txt_sits)
         self.c = Button(text='Продолжить', size_hint=(0.5, 0.5), pos_hint={'center_x': 0.5})
-        self.timer = Timer(1)
+        self.timer = Timer(45)
         self.timer.bind(done=self.unblock)
         self.done = False
         layout.add_widget(text)
@@ -131,7 +132,7 @@ class FourthScreen(Screen):
         self.res_line = TextInput(height='30px', size_hint=(1, None), pos_hint={'center_y': 0.5}, multiline=False)
         res2_label = Label(text='Результат после отдыха:')
         self.res2_line = TextInput(height='30px', size_hint=(1, None), pos_hint={'center_y': 0.5}, multiline=False)
-        self.timer = Timer(3)
+        self.timer = Timer(15)
         self.timer.bind(done=self.unblock)
         self.res_line.set_disabled(True)
         self.res2_line.set_disabled(True)
@@ -149,13 +150,12 @@ class FourthScreen(Screen):
 
     def unblock(self, *args):
         self.res_line.set_disabled(False)
-        self.timer.total = 5
-        self.timer.start()
-        self.timer.done = False
+        self.timer.restart(45)
         self.timer.bind(done=self.unblock2)
 
     def unblock2(self, *args):
         self.res2_line.set_disabled(False)
+        self.d.set_disabled(False)
 
 
     def next(self):
@@ -163,11 +163,26 @@ class FourthScreen(Screen):
         try:
             res = int(self.res_line.text)
             res2 = int(self.res2_line.text)
-            self.manager.current='1'
+            self.manager.current='5'
             self.manager.transition.direction='down'
         except ValueError:
             self.timer.start()
             self.d.set_disabled(True)
+
+class FifthScreen(Screen):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.layout = BoxLayout(orientation='vertical')
+        self.title = Label(text='test(pulse, res, res2, age)')
+        self.layout.add_widget(self.title)
+        self.add_widget(self.layout)
+        self.on_enter = self.ruffier_res
+
+    def ruffier_res(self):
+        self.title.text = test(pulse, res, res2, age)
+
+
+
 
 
 class Timer(Label):
@@ -180,6 +195,7 @@ class Timer(Label):
         super().__init__(text=text ,**kwargs)
 
     def start(self):
+        self.current = 0
         Clock.schedule_interval(self.change,1)
 
     def change(self, dt):
@@ -189,6 +205,13 @@ class Timer(Label):
         else:
             self.done = True
             return False
+
+    def restart(self, total, **kwargs):
+        self.done = False
+        self.total = total
+        self.current = 0
+        self.text = 'Прошло секунд: ' + str(self.current)
+        self.start()
 
 app = MyApp()
 app.run()
